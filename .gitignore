@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+
+# Notas internas de implementação — não sobem para o repositório
+docs/

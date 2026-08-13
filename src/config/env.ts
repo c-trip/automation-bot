@@ -1,0 +1,43 @@
+import "dotenv/config";
+
+/**
+ * Lê uma variável de ambiente obrigatória.
+ * Lança um erro descritivo na inicialização se ela não existir,
+ * em vez de falhar silenciosamente mais tarde.
+ */
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value || value.trim() === "") {
+    throw new Error(
+      `Variável de ambiente ausente: ${name}. Confira o arquivo .env (veja .env.example).`
+    );
+  }
+  return value;
+}
+
+function optional(name: string): string | undefined {
+  const value = process.env[name];
+  return value && value.trim() !== "" ? value : undefined;
+}
+
+export const env = {
+  port: Number(process.env.PORT ?? 3333),
+
+  discord: {
+    token: required("DISCORD_TOKEN"),
+    clientId: required("DISCORD_CLIENT_ID"),
+    // Usado futuramente para registrar slash commands num servidor específico.
+    guildId: optional("DISCORD_GUILD_ID"),
+    channels: {
+      // Canal padrão usado quando um canal específico não está configurado.
+      default: optional("DISCORD_CHANNEL_ID"),
+      prs: optional("DISCORD_CHANNEL_PRS") ?? optional("DISCORD_CHANNEL_ID"),
+      builds: optional("DISCORD_CHANNEL_BUILDS") ?? optional("DISCORD_CHANNEL_ID"),
+      issues: optional("DISCORD_CHANNEL_ISSUES") ?? optional("DISCORD_CHANNEL_ID"),
+    },
+  },
+
+  github: {
+    webhookSecret: required("GITHUB_WEBHOOK_SECRET"),
+  },
+} as const;

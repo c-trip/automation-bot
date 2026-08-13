@@ -1,0 +1,90 @@
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import { env } from "../config/env";
+import { sendEmbedToChannel } from "../services/discord.service";
+import {
+  buildIssueEmbed,
+  buildPullRequestEmbed,
+  buildPullRequestReviewEmbed,
+  buildWorkflowRunEmbed,
+  verifySignature,
+} from "../services/github.service";
+import type {
+  IssuesEvent,
+  PullRequestEvent,
+  PullRequestReviewEvent,
+  WorkflowRunEvent,
+} from "../types/github";
+
+interface RawBodyRequest extends FastifyRequest {
+  rawBody?: Buffer;
+}
+
+export async function githubRoutes(fastify: FastifyInstance): Promise<void> {
+  // O GitHub assina o corpo BRUTO da requisição (x-hub-signature-256).
+  // Precisamos guardar os bytes originais antes do parse em JSON para
+  // conseguir validar a assinatura corretamente.
+  fastify.addContentTypeParser(
+    "application/json",
+    { parseAs: "buffer" },
+    (req, body, done) => {
+      (req as RawBodyRequest).rawBody = body as Buffer;
+      try {
+        const json = body.length ? JSON.parse(body.toString("utf8")) : {};
+        done(null, json);
+      } catch (err) {
+        done(err as Error, undefined);
+      }
+    }
+  );
+
+  fastify.post("/webhooks/github", async (request, reply) => {
+    const rawBody = (request as RawBodyRequest).rawBody;
+    const signatureHeader = request.headers["x-hub-signature-256"];
+    const signature = Array.isArray(signatureHeader) ? signatureHeader[0] : signatureHeader;
+    const githubEventHeader = request.headers["x-github-event"];
+    const githubEvent = Array.isArray(githubEventHeader) ? githubEventHeader[0] : githubEventHeader;
+
+    if (!rawBody || !verifySignature(rawBody, signature)) {
+      request.log.warn("[github] Assinatura inválida ou ausente — requisição rejeitada");
+      return reply.code(401).send({ error: "Assinatura inválida" });
+    }
+
+    const payload = request.body as unknown;
+
+    switch (githubEvent) {
+      case "pull_request": {
+        const embed = buildPullRequestEmbed(payload as PullRequestEvent);
+        if (embed) await sendEmbedToChannel(env.discord.channels.prs, embed);
+        break;
+      }
+
+      case "pull_request_review": {
+        const embed = buildPullRequestReviewEmbed(payload as PullRequestReviewEvent);
+        if (embed) await sendEmbedToChannel(env.discord.channels.prs, embed);
+        break;
+      }
+
+      case "workflow_run": {
+        const embed = buildWorkflowRunEmbed(payload as WorkflowRunEvent);
+        if (embed) await sendEmbedToChannel(env.discord.channels.builds, embed);
+        break;
+      }
+
+      case "issues": {
+        const embed = buildIssueEmbed(payload as IssuesEvent);
+        if (embed) await sendEmbedToChannel(env.discord.channels.issues, embed);
+        break;
+      }
+
+      case "ping": {
+        request.log.info("[github] Ping recebido — webhook configurado com sucesso");
+        break;
+      }
+
+      default:
+        request.log.info(`[github] Evento não tratado: ${githubEvent ?? "desconhecido"}`);
+    }
+
+    return reply.code(200).send({ ok: true });
+  });
+}
