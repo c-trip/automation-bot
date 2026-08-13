@@ -4,8 +4,12 @@
 //
 // Uso: node scripts/test-webhook.js <cenario>
 // Cenários disponíveis: ping, pr-opened, pr-merged, pr-closed, pr-approved,
-//                        build-success, build-failed, issue-opened, issue-assigned,
-//                        issue-unassigned, issue-closed
+//                        pr-reopened, pr-ready-for-review, pr-review-requested,
+//                        pr-comment, pr-review-comment,
+//                        build-success, build-failed,
+//                        deploy-started, deploy-success, deploy-failed,
+//                        issue-opened, issue-assigned, issue-unassigned,
+//                        issue-closed, issue-reopened
 
 require("dotenv/config");
 const crypto = require("node:crypto");
@@ -28,6 +32,18 @@ const assignee = {
   login: "maria",
   html_url: "https://github.com/maria",
   avatar_url: "https://github.com/maria.png",
+};
+
+const carlos = {
+  login: "carlos",
+  html_url: "https://github.com/carlos",
+  avatar_url: "https://github.com/carlos.png",
+};
+
+const ana = {
+  login: "ana",
+  html_url: "https://github.com/ana",
+  avatar_url: "https://github.com/ana.png",
 };
 
 const repository = {
@@ -86,6 +102,61 @@ const scenarios = {
       repository,
     },
   },
+  "pr-reopened": {
+    event: "pull_request",
+    payload: { action: "reopened", pull_request: basePR, repository, sender: user },
+  },
+  "pr-ready-for-review": {
+    event: "pull_request",
+    payload: {
+      action: "ready_for_review",
+      pull_request: { ...basePR, draft: false, requested_reviewers: [carlos, ana] },
+      repository,
+      sender: user,
+    },
+  },
+  "pr-review-requested": {
+    event: "pull_request",
+    payload: {
+      action: "review_requested",
+      pull_request: basePR,
+      requested_reviewer: carlos,
+      repository,
+      sender: user,
+    },
+  },
+  "pr-comment": {
+    event: "issue_comment",
+    payload: {
+      action: "created",
+      issue: {
+        number: basePR.number,
+        title: basePR.title,
+        html_url: basePR.html_url,
+        user,
+        pull_request: { html_url: basePR.html_url },
+      },
+      comment: {
+        body: "Precisamos tratar este edge case.",
+        html_url: `${basePR.html_url}#issuecomment-1`,
+        user: carlos,
+      },
+      repository,
+    },
+  },
+  "pr-review-comment": {
+    event: "pull_request_review_comment",
+    payload: {
+      action: "created",
+      comment: {
+        body: "Esta linha pode gerar null pointer se `user` vier undefined.",
+        html_url: `${basePR.html_url}#discussion_r1`,
+        user: carlos,
+      },
+      pull_request: basePR,
+      repository,
+    },
+  },
   "build-success": {
     event: "workflow_run",
     payload: {
@@ -113,6 +184,63 @@ const scenarios = {
         status: "completed",
         head_branch: "fix/login",
         run_number: 18,
+      },
+      repository,
+      sender: user,
+    },
+  },
+  "deploy-started": {
+    event: "deployment_status",
+    payload: {
+      action: "created",
+      deployment_status: {
+        state: "in_progress",
+        environment: "production",
+        target_url: "https://vercel.com/helder/joyce-bot/deployments/1",
+      },
+      deployment: {
+        sha: "a1b2c3d4e5f6",
+        ref: "main",
+        environment: "production",
+        description: "feat(auth): add oauth login",
+      },
+      repository,
+      sender: user,
+    },
+  },
+  "deploy-success": {
+    event: "deployment_status",
+    payload: {
+      action: "created",
+      deployment_status: {
+        state: "success",
+        environment: "production",
+        target_url: "https://frontend.example.com",
+      },
+      deployment: {
+        sha: "a1b2c3d4e5f6",
+        ref: "main",
+        environment: "production",
+        description: "feat(auth): add oauth login",
+      },
+      repository,
+      sender: user,
+    },
+  },
+  "deploy-failed": {
+    event: "deployment_status",
+    payload: {
+      action: "created",
+      deployment_status: {
+        state: "failure",
+        environment: "production",
+        log_url: "https://vercel.com/helder/joyce-bot/deployments/1/logs",
+      },
+      deployment: {
+        sha: "a1b2c3d4e5f6",
+        ref: "main",
+        environment: "production",
+        description: "feat(auth): add oauth login",
       },
       repository,
       sender: user,
@@ -168,6 +296,20 @@ const scenarios = {
     event: "issues",
     payload: {
       action: "closed",
+      issue: {
+        number: 7,
+        title: "Botão de login não responde",
+        html_url: "https://github.com/helder/joyce-bot/issues/7",
+        user,
+      },
+      repository,
+      sender: user,
+    },
+  },
+  "issue-reopened": {
+    event: "issues",
+    payload: {
+      action: "reopened",
       issue: {
         number: 7,
         title: "Botão de login não responde",

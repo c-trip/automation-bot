@@ -2,15 +2,21 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { env } from "../config/env";
 import { sendEmbedToChannel } from "../services/discord.service";
 import {
+  buildDeploymentStatusEmbed,
+  buildIssueCommentEmbed,
   buildIssueEmbed,
   buildPullRequestEmbed,
+  buildPullRequestReviewCommentEmbed,
   buildPullRequestReviewEmbed,
   buildWorkflowRunEmbed,
   verifySignature,
 } from "../services/github.service";
 import type {
+  DeploymentStatusEvent,
+  IssueCommentEvent,
   IssuesEvent,
   PullRequestEvent,
+  PullRequestReviewCommentEvent,
   PullRequestReviewEvent,
   WorkflowRunEvent,
 } from "../types/github";
@@ -61,9 +67,27 @@ export async function githubRoutes(fastify: FastifyInstance): Promise<void> {
         break;
       }
 
+      case "pull_request_review_comment": {
+        const embed = buildPullRequestReviewCommentEmbed(payload as PullRequestReviewCommentEvent);
+        if (embed) await sendEmbedToChannel(env.discord.channels.prs, embed);
+        break;
+      }
+
+      case "issue_comment": {
+        const embed = buildIssueCommentEmbed(payload as IssueCommentEvent);
+        if (embed) await sendEmbedToChannel(env.discord.channels.prs, embed);
+        break;
+      }
+
       case "workflow_run": {
         const embed = buildWorkflowRunEmbed(payload as WorkflowRunEvent);
         if (embed) await sendEmbedToChannel(env.discord.channels.builds, embed);
+        break;
+      }
+
+      case "deployment_status": {
+        const embed = buildDeploymentStatusEmbed(payload as DeploymentStatusEvent);
+        if (embed) await sendEmbedToChannel(env.discord.channels.deploys, embed);
         break;
       }
 

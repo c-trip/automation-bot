@@ -433,14 +433,14 @@ Canal Discord
 
 ---
 
-## Sprint 5
+## Sprint 4
 
 * Dashboard Web
 * Métricas de produtividade
 
 ---
 
-## Sprint 6
+## Sprint 5
 
 * IA para revisão de código
 * Relatórios automáticos
