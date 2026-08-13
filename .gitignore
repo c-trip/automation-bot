@@ -3,6 +3,7 @@ dist/
 .env
 *.log
 .DS_Store
+src/generated/
 
 # Notas internas de implementação — não sobem para o repositório
 docs/

@@ -1,0 +1,85 @@
+// Schema do Prisma para o Joyce Bot.
+// Guarda o estado das PRs/Issues/Builds vindas dos webhooks do GitHub — usado por
+// /stats, /leaderboard e pelos lembretes automáticos (PR sem review, issue parada,
+// build quebrando repetido).
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model PullRequest {
+  id       Int    @id @default(autoincrement())
+  repo     String
+  number   Int
+  title    String
+  authorLogin String
+
+  /// "open" | "merged" | "closed"
+  state    String
+  draft    Boolean @default(false)
+
+  openedAt   DateTime
+  closedAt   DateTime?
+  mergedAt   DateTime?
+
+  /// Timestamp do último "review_requested" recebido — usado pro lembrete de 24h.
+  reviewRequestedAt DateTime?
+  /// Preenchido no primeiro pull_request_review (qualquer estado) — indica que já
+  /// houve alguma revisão, mesmo que não aprovada.
+  firstReviewAt     DateTime?
+  /// Marca quando o lembrete "sem review há 24h" foi enviado, pra não repetir a cada
+  /// varredura.
+  reviewReminderSentAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([repo, number])
+  @@index([state])
+}
+
+model Issue {
+  id          Int    @id @default(autoincrement())
+  repo        String
+  number      Int
+  title       String
+  authorLogin String
+
+  /// "open" | "closed"
+  state       String
+
+  openedAt       DateTime
+  closedAt       DateTime?
+  lastActivityAt DateTime
+
+  /// Marca quando o lembrete "sem atualização há 7 dias" foi enviado.
+  staleReminderSentAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([repo, number])
+  @@index([state])
+}
+
+model BuildRun {
+  id           Int    @id @default(autoincrement())
+  repo         String
+  workflowName String
+  runNumber    Int
+  branch       String
+
+  /// "success" | "failure"
+  conclusion String
+
+  finishedAt DateTime
+  createdAt  DateTime @default(now())
+
+  @@unique([repo, workflowName, runNumber])
+  @@index([repo, workflowName, finishedAt])
+}

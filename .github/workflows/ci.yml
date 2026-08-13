@@ -10,6 +10,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      # Só precisa ser uma URL válida — o `prisma generate` (rodado no postinstall)
+      # lê essa variável mas não chega a abrir conexão com o banco.
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/joyce_ci
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4

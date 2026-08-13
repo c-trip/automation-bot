@@ -16,7 +16,9 @@ DISCORD_CHANNEL_ID=<id de um canal de teste>
 GITHUB_WEBHOOK_SECRET=<qualquer string secreta>
 ```
 
-Para testar todos os tipos de evento em canais separados, preencha também `DISCORD_CHANNEL_PRS`, `DISCORD_CHANNEL_BUILDS` e `DISCORD_CHANNEL_ISSUES` (senão tudo cai no `DISCORD_CHANNEL_ID`).
+Para testar todos os tipos de evento em canais separados, preencha também `DISCORD_CHANNEL_PRS`, `DISCORD_CHANNEL_BUILDS`, `DISCORD_CHANNEL_ISSUES` e `DISCORD_CHANNEL_DEPLOYS` (senão tudo cai no `DISCORD_CHANNEL_ID`).
+
+Para testar `/stats` e `/leaderboard` (seção 7), preencha também `DATABASE_URL` (Postgres) — sem ela os dois comandos respondem avisando que o banco não está configurado, sem quebrar o resto do bot.
 
 > Como pegar o ID de um canal: no Discord, ative **Modo Desenvolvedor** (Configurações → Avançado), clique com o botão direito no canal → **Copiar ID**.
 
@@ -63,7 +65,7 @@ Se o bot não ficar **online** no Discord depois disso, veja a seção [Problema
 Em outro terminal:
 
 ```bash
-curl http://localhost:3333/health
+curl http://localhost:3333/saude
 ```
 
 Esperado: `{"status":"ok"}`
@@ -166,6 +168,38 @@ Se algo falhar, a mesma aba **Recent Deliveries** permite clicar em **Redeliver*
 
 ---
 
+## 7. Testar os slash commands (`/stats` e `/leaderboard`)
+
+Esses comandos leem do banco de dados (Postgres via Prisma) o histórico de PRs/Issues/Builds que o bot vai registando a cada webhook recebido. Sem `DATABASE_URL` configurada, eles respondem com um aviso e nada quebra.
+
+### 7.1. Registar os comandos no Discord
+
+Os slash commands precisam ser registados na API do Discord antes de aparecerem no servidor — isso só precisa ser refeito quando a lista/descrição dos comandos mudar, não a cada `pnpm dev`:
+
+```bash
+pnpm commands:register
+```
+
+- Com `DISCORD_GUILD_ID` preenchido no `.env`, o registo é só nesse servidor e aparece quase na hora — recomendado em desenvolvimento.
+- Sem `DISCORD_GUILD_ID`, o registo é global e pode levar até 1h para propagar em todos os servidores.
+
+### 7.2. Rodar os comandos
+
+Com `pnpm dev` rodando, no seu servidor do Discord digite:
+
+```
+/stats
+/stats dias:7
+/leaderboard
+/leaderboard dias:7
+```
+
+Esperado: o bot responde (após um breve "pensando...") com um embed de estatísticas ou o ranking de quem mais mergeou PRs no período. Se `DATABASE_URL` não estiver configurada, a resposta é o aviso de banco desativado em vez do embed.
+
+> Dica: gere alguns eventos primeiro com `pnpm test:webhook pr-merged` (repita trocando o `login` do usuário fake no script, se quiser mais de uma pessoa no leaderboard) para ter dados para consultar.
+
+---
+
 ## Problemas comuns
 
 | Sintoma | Causa provável | O que fazer |
@@ -176,3 +210,5 @@ Se algo falhar, a mesma aba **Recent Deliveries** permite clicar em **Redeliver*
 | Webhook responde `200` mas nada chega no Discord | Canal não configurado para aquele evento, ou ID errado | Confira `DISCORD_CHANNEL_*` no `.env`; veja o aviso no log do servidor |
 | Mensagem não aparece mesmo com canal certo | Bot sem permissão `Send Messages`/`View Channels` naquele canal | Ajuste as permissões do bot no canal ou no cargo dele |
 | GitHub mostra erro na entrega (não 200) | URL do ngrok mudou, ou servidor local caiu | Confirme que `pnpm dev` está rodando e a URL do ngrok bate com a do webhook |
+| `/stats` ou `/leaderboard` não aparecem ao digitar no Discord | Comandos ainda não foram registados, ou registo global ainda propagando | Rode `pnpm commands:register`; se não usar `DISCORD_GUILD_ID`, espere até 1h |
+| `/stats`/`/leaderboard` sempre avisam que o banco não está configurado | `DATABASE_URL` ausente ou inválida no `.env` | Configure um Postgres válido em `DATABASE_URL` e rode `pnpm db:deploy` |
