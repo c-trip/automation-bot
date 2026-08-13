@@ -4,6 +4,7 @@
   "description": "Bot que conecta GitHub e Discord para automatizar notificações de PRs, builds e issues.",
   "private": true,
   "type": "commonjs",
+  "packageManager": "pnpm@11.10.0",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
