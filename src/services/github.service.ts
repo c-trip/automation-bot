@@ -116,9 +116,38 @@ export function buildIssueEmbed(payload: IssuesEvent): EmbedBuilder | null {
   const { action, issue, repository } = payload;
 
   if (action === "opened") {
-    return new EmbedBuilder()
+    const assignees = issue.assignees?.length
+      ? issue.assignees.map((assignee) => `@${assignee.login}`).join(", ")
+      : undefined;
+
+    const embed = new EmbedBuilder()
       .setColor(COLORS.blue)
       .setTitle(`🐛 Issue #${issue.number} aberta: ${issue.title}`)
+      .setURL(issue.html_url)
+      .setAuthor({ name: issue.user.login, iconURL: issue.user.avatar_url, url: issue.user.html_url })
+      .setFooter({ text: repository.full_name })
+      .setTimestamp();
+
+    if (assignees) embed.setDescription(`Responsável: ${assignees}`);
+
+    return embed;
+  }
+
+  if (action === "assigned" && issue.assignee) {
+    return new EmbedBuilder()
+      .setColor(COLORS.blue)
+      .setTitle(`👤 Issue #${issue.number} atribuída: ${issue.title}`)
+      .setURL(issue.html_url)
+      .setDescription(`Responsável: [@${issue.assignee.login}](${issue.assignee.html_url})`)
+      .setAuthor({ name: issue.user.login, iconURL: issue.user.avatar_url, url: issue.user.html_url })
+      .setFooter({ text: repository.full_name })
+      .setTimestamp();
+  }
+
+  if (action === "unassigned") {
+    return new EmbedBuilder()
+      .setColor(COLORS.gray)
+      .setTitle(`👤 Issue #${issue.number} desatribuída: ${issue.title}`)
       .setURL(issue.html_url)
       .setAuthor({ name: issue.user.login, iconURL: issue.user.avatar_url, url: issue.user.html_url })
       .setFooter({ text: repository.full_name })

@@ -4,7 +4,8 @@
 //
 // Uso: node scripts/test-webhook.js <cenario>
 // Cenários disponíveis: ping, pr-opened, pr-merged, pr-closed, pr-approved,
-//                        build-success, build-failed, issue-opened, issue-closed
+//                        build-success, build-failed, issue-opened, issue-assigned,
+//                        issue-unassigned, issue-closed
 
 require("dotenv/config");
 const crypto = require("node:crypto");
@@ -21,6 +22,12 @@ const user = {
   login: "helder",
   html_url: "https://github.com/helder",
   avatar_url: "https://github.com/helder.png",
+};
+
+const assignee = {
+  login: "maria",
+  html_url: "https://github.com/maria",
+  avatar_url: "https://github.com/maria.png",
 };
 
 const repository = {
@@ -120,6 +127,38 @@ const scenarios = {
         title: "Botão de login não responde",
         html_url: "https://github.com/helder/joyce-bot/issues/7",
         user,
+      },
+      repository,
+      sender: user,
+    },
+  },
+  "issue-assigned": {
+    event: "issues",
+    payload: {
+      action: "assigned",
+      issue: {
+        number: 7,
+        title: "Botão de login não responde",
+        html_url: "https://github.com/helder/joyce-bot/issues/7",
+        user,
+        assignee,
+        assignees: [assignee],
+      },
+      repository,
+      sender: user,
+    },
+  },
+  "issue-unassigned": {
+    event: "issues",
+    payload: {
+      action: "unassigned",
+      issue: {
+        number: 7,
+        title: "Botão de login não responde",
+        html_url: "https://github.com/helder/joyce-bot/issues/7",
+        user,
+        assignee: null,
+        assignees: [],
       },
       repository,
       sender: user,

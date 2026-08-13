@@ -57,6 +57,8 @@ export interface GitHubIssue {
   title: string;
   html_url: string;
   user: GitHubUser;
+  assignee?: GitHubUser | null;
+  assignees?: GitHubUser[];
 }
 
 export interface IssuesEvent {

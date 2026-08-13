@@ -92,6 +92,8 @@ Cenários disponíveis:
 | `build-success` | Build/Action concluída com sucesso |
 | `build-failed` | Build/Action falhou |
 | `issue-opened` | Issue aberta |
+| `issue-assigned` | Issue atribuída a um responsável |
+| `issue-unassigned` | Issue desatribuída |
 | `issue-closed` | Issue encerrada |
 
 Exemplo testando vários de uma vez:
