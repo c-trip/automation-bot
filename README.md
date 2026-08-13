@@ -77,13 +77,26 @@ src/
 
 Cada etapa de desenvolvimento é resumida em [`docs/implementacoes/`](./docs/implementacoes/) (decisões, arquivos alterados, pendências).
 
-## Status
+## Status (bot.md → Roadmap V1)
 
-MVP do Sprint 1 (bot.md → Roadmap V1):
+**Sprint 1**
 
-- [x] Servidor Fastify com endpoint `/health` e `/webhooks/github`
+- [x] Servidor Fastify com endpoint `/saude` e `/webhooks/github`
 - [x] Bot do Discord conectando via `discord.js`
 - [x] Validação de assinatura HMAC do webhook do GitHub
 - [x] Envio de embeds para eventos `pull_request`, `pull_request_review`, `workflow_run` e `issues`
+
+**Sprint 2**
+
+- [x] PR abertas / aprovadas / mergeadas
+
+**Sprint 3**
+
+- [x] Workflow Actions / CI: `.github/workflows/ci.yml` (typecheck + build a cada push/PR)
+- [x] Builds: notificações de build iniciada, concluída e falhada (`workflow_run`)
+- [ ] Deploys
+
+**Pendente**
+
 - [ ] Persistência em banco de dados (Sprint 4)
 - [ ] Slash commands

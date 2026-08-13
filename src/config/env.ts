@@ -1,10 +1,5 @@
 import "dotenv/config";
 
-/**
- * Lê uma variável de ambiente obrigatória.
- * Lança um erro descritivo na inicialização se ela não existir,
- * em vez de falhar silenciosamente mais tarde.
- */
 function required(name: string): string {
   const value = process.env[name];
   if (!value || value.trim() === "") {
@@ -26,10 +21,8 @@ export const env = {
   discord: {
     token: required("DISCORD_TOKEN"),
     clientId: required("DISCORD_CLIENT_ID"),
-    // Usado futuramente para registrar slash commands num servidor específico.
     guildId: optional("DISCORD_GUILD_ID"),
     channels: {
-      // Canal padrão usado quando um canal específico não está configurado.
       default: optional("DISCORD_CHANNEL_ID"),
       prs: optional("DISCORD_CHANNEL_PRS") ?? optional("DISCORD_CHANNEL_ID"),
       builds: optional("DISCORD_CHANNEL_BUILDS") ?? optional("DISCORD_CHANNEL_ID"),

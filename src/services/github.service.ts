@@ -86,6 +86,16 @@ export function buildPullRequestReviewEmbed(payload: PullRequestReviewEvent): Em
 export function buildWorkflowRunEmbed(payload: WorkflowRunEvent): EmbedBuilder | null {
   const { workflow_run: run, repository } = payload;
 
+  if (run.status === "in_progress") {
+    return new EmbedBuilder()
+      .setColor(COLORS.blue)
+      .setTitle(`🏗️ Build iniciada: ${run.name} #${run.run_number}`)
+      .setURL(run.html_url)
+      .setDescription(`Branch: \`${run.head_branch}\``)
+      .setFooter({ text: repository.full_name })
+      .setTimestamp();
+  }
+
   if (run.status !== "completed") return null;
   if (run.conclusion !== "success" && run.conclusion !== "failure") return null;
 

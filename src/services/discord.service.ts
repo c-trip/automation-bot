@@ -1,10 +1,6 @@
 import { EmbedBuilder, TextChannel } from "discord.js";
 import { discordClient, startBot } from "../bot";
 
-/**
- * Envia um embed para um canal do Discord pelo ID.
- * Garante que o bot já esteja logado antes de tentar buscar o canal.
- */
 export async function sendEmbedToChannel(
   channelId: string | undefined,
   embed: EmbedBuilder

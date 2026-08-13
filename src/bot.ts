@@ -13,10 +13,6 @@ export const discordClient = new Client({
 
 let readyPromise: Promise<void> | null = null;
 
-/**
- * Faz login no Discord (uma única vez) e resolve quando o client estiver pronto.
- * Chamadas subsequentes reaproveitam a mesma promise.
- */
 export function startBot(): Promise<void> {
   if (!readyPromise) {
     readyPromise = new Promise((resolve, reject) => {

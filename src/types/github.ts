@@ -1,8 +1,3 @@
-/**
- * Tipos mínimos dos payloads de webhook do GitHub usados pelo MVP.
- * Não é o schema completo do GitHub — apenas os campos que consumimos.
- */
-
 export interface GitHubUser {
   login: string;
   html_url: string;

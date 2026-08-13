@@ -20,9 +20,6 @@ interface RawBodyRequest extends FastifyRequest {
 }
 
 export async function githubRoutes(fastify: FastifyInstance): Promise<void> {
-  // O GitHub assina o corpo BRUTO da requisição (x-hub-signature-256).
-  // Precisamos guardar os bytes originais antes do parse em JSON para
-  // conseguir validar a assinatura corretamente.
   fastify.addContentTypeParser(
     "application/json",
     { parseAs: "buffer" },
