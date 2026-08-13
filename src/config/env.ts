@@ -27,6 +27,7 @@ export const env = {
       prs: optional("DISCORD_CHANNEL_PRS") ?? optional("DISCORD_CHANNEL_ID"),
       builds: optional("DISCORD_CHANNEL_BUILDS") ?? optional("DISCORD_CHANNEL_ID"),
       issues: optional("DISCORD_CHANNEL_ISSUES") ?? optional("DISCORD_CHANNEL_ID"),
+      deploys: optional("DISCORD_CHANNEL_DEPLOYS") ?? optional("DISCORD_CHANNEL_ID"),
     },
   },
 

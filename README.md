@@ -29,6 +29,7 @@ pnpm dev
 | `DISCORD_CHANNEL_PRS` | não | Canal para eventos de Pull Request (`#github-prs`) |
 | `DISCORD_CHANNEL_BUILDS` | não | Canal para eventos de build (`#builds`) |
 | `DISCORD_CHANNEL_ISSUES` | não | Canal para eventos de issues (`#issues`) |
+| `DISCORD_CHANNEL_DEPLOYS` | não | Canal para eventos de deploy (`#deploys`) |
 | `GITHUB_WEBHOOK_SECRET` | sim | Secret usado para validar a assinatura do webhook do GitHub |
 
 Para pegar o ID de um canal do Discord: ative o **Modo Desenvolvedor** (Configurações → Avançado) e clique com o botão direito no canal → **Copiar ID**.
@@ -40,7 +41,7 @@ No repositório: **Settings → Webhooks → Add webhook**
 - **Payload URL**: `https://SEU_DOMINIO/webhooks/github` (em desenvolvimento local, use [ngrok](https://ngrok.com) ou similar para expor `localhost:3333`)
 - **Content type**: `application/json`
 - **Secret**: o mesmo valor de `GITHUB_WEBHOOK_SECRET` no `.env`
-- **Eventos**: selecione *Pull requests*, *Pull request reviews*, *Workflow runs* e *Issues*
+- **Eventos**: selecione *Pull requests*, *Pull request reviews*, *Pull request review comments*, *Issue comments*, *Workflow runs*, *Deployment statuses* e *Issues*
 
 ## Scripts
 
@@ -94,9 +95,23 @@ Cada etapa de desenvolvimento é resumida em [`docs/implementacoes/`](./docs/imp
 
 - [x] Workflow Actions / CI: `.github/workflows/ci.yml` (typecheck + build a cada push/PR)
 - [x] Builds: notificações de build iniciada, concluída e falhada (`workflow_run`)
-- [ ] Deploys
+
+**Sprint 4 — Produtividade da equipa**
+
+- [x] PR pronta para review (`pull_request` → `ready_for_review`)
+- [x] Review solicitada (`pull_request` → `review_requested`)
+- [x] Comentário em Pull Request (`issue_comment` e `pull_request_review_comment`)
+- [x] Issue reaberta (`issues` → `reopened`)
+- [x] Pull Request reaberta (`pull_request` → `reopened`, antes tratada igual a "aberta")
+
+**Sprint 5 — Deploy**
+
+- [x] Deploy iniciado / concluído / falhou via `deployment_status` (GitHub Actions, Vercel, Railway, Render — o que estiver integrado com a API de Deployments do GitHub)
 
 **Pendente**
 
-- [ ] Persistência em banco de dados (Sprint 4)
+- [ ] Persistência em banco de dados
+- [ ] `/stats` e `/leaderboard` (dependem de persistência)
+- [ ] Lembretes automáticos (PR sem review há 24h, issue parada, build quebrando repetido)
 - [ ] Slash commands
+- [ ] Integrações com Jira, Linear, Notion

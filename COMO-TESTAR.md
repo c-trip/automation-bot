@@ -88,13 +88,22 @@ Cenários disponíveis:
 | `pr-opened` | Pull Request aberta |
 | `pr-merged` | Pull Request mergeada |
 | `pr-closed` | Pull Request fechada sem merge |
+| `pr-reopened` | Pull Request reaberta |
 | `pr-approved` | Pull Request aprovada em review |
+| `pr-ready-for-review` | PR draft marcada como pronta para review |
+| `pr-review-requested` | Reviewer marcado numa PR |
+| `pr-comment` | Comentário novo numa PR (`issue_comment`) |
+| `pr-review-comment` | Comentário numa linha do diff da PR (`pull_request_review_comment`) |
 | `build-success` | Build/Action concluída com sucesso |
 | `build-failed` | Build/Action falhou |
+| `deploy-started` | Deploy iniciado (`deployment_status`) |
+| `deploy-success` | Deploy concluído com sucesso |
+| `deploy-failed` | Deploy falhou |
 | `issue-opened` | Issue aberta |
 | `issue-assigned` | Issue atribuída a um responsável |
 | `issue-unassigned` | Issue desatribuída |
 | `issue-closed` | Issue encerrada |
+| `issue-reopened` | Issue reaberta |
 
 Exemplo testando vários de uma vez:
 
@@ -134,7 +143,10 @@ No repositório GitHub que você quer monitorar: **Settings → Webhooks → Add
 - **Which events**: selecione *Let me select individual events* e marque:
   - Pull requests
   - Pull request reviews
+  - Pull request review comments
+  - Issue comments
   - Workflow runs
+  - Deployment statuses
   - Issues
 - Deixe **Active** marcado e clique em **Add webhook**
 
