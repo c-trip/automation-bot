@@ -24,13 +24,14 @@ pnpm dev
 | `PORT` | não (padrão 3333) | Porta do servidor HTTP |
 | `DISCORD_TOKEN` | sim | Token do bot (Discord Developer Portal → Bot) |
 | `DISCORD_CLIENT_ID` | sim | Application ID |
-| `DISCORD_GUILD_ID` | não | ID do servidor (uso futuro: slash commands) |
+| `DISCORD_GUILD_ID` | não | ID do servidor — se preenchido, `pnpm commands:register` registra os slash commands só nele (propagação quase instantânea); sem ele, registra globalmente (até 1h para propagar) |
 | `DISCORD_CHANNEL_ID` | recomendado | Canal padrão, usado quando um canal específico abaixo não está definido |
 | `DISCORD_CHANNEL_PRS` | não | Canal para eventos de Pull Request (`#github-prs`) |
 | `DISCORD_CHANNEL_BUILDS` | não | Canal para eventos de build (`#builds`) |
 | `DISCORD_CHANNEL_ISSUES` | não | Canal para eventos de issues (`#issues`) |
 | `DISCORD_CHANNEL_DEPLOYS` | não | Canal para eventos de deploy (`#deploys`) |
 | `GITHUB_WEBHOOK_SECRET` | sim | Secret usado para validar a assinatura do webhook do GitHub |
+| `DATABASE_URL` | não | Connection string do Postgres — sem ela o bot funciona normalmente, mas `/stats`, `/leaderboard` e os lembretes automáticos ficam desativados |
 
 Para pegar o ID de um canal do Discord: ative o **Modo Desenvolvedor** (Configurações → Avançado) e clique com o botão direito no canal → **Copiar ID**.
 
@@ -46,11 +47,15 @@ No repositório: **Settings → Webhooks → Add webhook**
 ## Scripts
 
 ```bash
-pnpm dev            # desenvolvimento (hot reload)
-pnpm build          # compila para dist/
-pnpm start          # roda a versão compilada
-pnpm typecheck      # checagem de tipos sem gerar build
-pnpm test:webhook   # envia um payload de exemplo assinado para /webhooks/github
+pnpm dev                # desenvolvimento (hot reload)
+pnpm build              # compila para dist/
+pnpm start              # roda a versão compilada
+pnpm typecheck          # checagem de tipos sem gerar build
+pnpm test:webhook       # envia um payload de exemplo assinado para /webhooks/github
+pnpm commands:register  # registra /stats e /leaderboard na API do Discord
+pnpm db:migrate         # cria/aplica uma migration do Prisma (dev)
+pnpm db:deploy          # aplica migrations pendentes (produção)
+pnpm db:studio          # abre o Prisma Studio para inspecionar o banco
 ```
 
 ## Como testar
@@ -62,16 +67,27 @@ Veja o passo a passo completo em [`COMO-TESTAR.md`](./COMO-TESTAR.md).
 ```txt
 src/
 ├── server.ts               # bootstrap do Fastify + Discord
-├── bot.ts                  # client do Discord (login)
+├── bot.ts                  # client do Discord (login) + handler de slash commands
 ├── routes/
 │   └── github.ts            # POST /webhooks/github
+├── commands/
+│   ├── stats.ts              # /stats
+│   ├── leaderboard.ts         # /leaderboard
+│   └── index.ts               # lista de comandos (registro + handler)
 ├── services/
 │   ├── discord.service.ts   # envio de mensagens/embeds
-│   └── github.service.ts    # validação de assinatura + montagem de embeds
+│   ├── github.service.ts    # validação de assinatura + montagem de embeds
+│   └── stats.service.ts     # persistência do histórico + consultas de /stats e /leaderboard
+├── lib/
+│   └── prisma.ts             # client do Prisma (Postgres), opcional
 ├── config/
 │   └── env.ts                # leitura/validação de variáveis de ambiente
 └── types/
     └── github.ts             # tipos dos payloads de webhook usados
+
+prisma/
+├── schema.prisma            # modelos PullRequest, Issue, BuildRun
+└── migrations/               # histórico de migrations do banco
 ```
 
 ## Histórico de implementações
@@ -108,10 +124,14 @@ Cada etapa de desenvolvimento é resumida em [`docs/implementacoes/`](./docs/imp
 
 - [x] Deploy iniciado / concluído / falhou via `deployment_status` (GitHub Actions, Vercel, Railway, Render — o que estiver integrado com a API de Deployments do GitHub)
 
+**Sprint 6 — Persistência e slash commands**
+
+- [x] Persistência em banco de dados (Postgres + Prisma, opcional — bot funciona sem ela)
+- [x] Slash commands (`pnpm commands:register`)
+- [x] `/stats` — PRs abertas/mergeadas, issues abertas/fechadas, builds falhados num período
+- [x] `/leaderboard` — ranking de quem mais mergeou PRs num período
+
 **Pendente**
 
-- [ ] Persistência em banco de dados
-- [ ] `/stats` e `/leaderboard` (dependem de persistência)
-- [ ] Lembretes automáticos (PR sem review há 24h, issue parada, build quebrando repetido)
-- [ ] Slash commands
+- [ ] Lembretes automáticos (PR sem review há 24h, issue parada, build quebrando repetido) — schema já tem os campos (`reviewReminderSentAt`, `staleReminderSentAt`), falta o agendador
 - [ ] Integrações com Jira, Linear, Notion

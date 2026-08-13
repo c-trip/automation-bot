@@ -11,6 +11,12 @@ import {
   buildWorkflowRunEmbed,
   verifySignature,
 } from "../services/github.service";
+import {
+  recordBuildRun,
+  recordIssueEvent,
+  recordPullRequestEvent,
+  recordPullRequestReviewEvent,
+} from "../services/stats.service";
 import type {
   DeploymentStatusEvent,
   IssueCommentEvent,
@@ -56,14 +62,18 @@ export async function githubRoutes(fastify: FastifyInstance): Promise<void> {
 
     switch (githubEvent) {
       case "pull_request": {
-        const embed = buildPullRequestEmbed(payload as PullRequestEvent);
+        const prPayload = payload as PullRequestEvent;
+        const embed = buildPullRequestEmbed(prPayload);
         if (embed) await sendEmbedToChannel(env.discord.channels.prs, embed);
+        await recordPullRequestEvent(prPayload);
         break;
       }
 
       case "pull_request_review": {
-        const embed = buildPullRequestReviewEmbed(payload as PullRequestReviewEvent);
+        const reviewPayload = payload as PullRequestReviewEvent;
+        const embed = buildPullRequestReviewEmbed(reviewPayload);
         if (embed) await sendEmbedToChannel(env.discord.channels.prs, embed);
+        await recordPullRequestReviewEvent(reviewPayload);
         break;
       }
 
@@ -80,8 +90,10 @@ export async function githubRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       case "workflow_run": {
-        const embed = buildWorkflowRunEmbed(payload as WorkflowRunEvent);
+        const workflowPayload = payload as WorkflowRunEvent;
+        const embed = buildWorkflowRunEmbed(workflowPayload);
         if (embed) await sendEmbedToChannel(env.discord.channels.builds, embed);
+        await recordBuildRun(workflowPayload);
         break;
       }
 
@@ -92,8 +104,10 @@ export async function githubRoutes(fastify: FastifyInstance): Promise<void> {
       }
 
       case "issues": {
-        const embed = buildIssueEmbed(payload as IssuesEvent);
+        const issuePayload = payload as IssuesEvent;
+        const embed = buildIssueEmbed(issuePayload);
         if (embed) await sendEmbedToChannel(env.discord.channels.issues, embed);
+        await recordIssueEvent(issuePayload);
         break;
       }
 

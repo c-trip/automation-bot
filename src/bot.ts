@@ -1,4 +1,5 @@
 import { Client, Events, GatewayIntentBits, Partials } from "discord.js";
+import { commands } from "./commands";
 import { env } from "./config/env";
 
 export const discordClient = new Client({
@@ -9,6 +10,25 @@ export const discordClient = new Client({
     GatewayIntentBits.MessageContent,
   ],
   partials: [Partials.Channel],
+});
+
+discordClient.on(Events.InteractionCreate, async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
+
+  const command = commands.find((c) => c.data.name === interaction.commandName);
+  if (!command) return;
+
+  try {
+    await command.execute(interaction);
+  } catch (err) {
+    console.error(`[discord] Falha ao executar /${interaction.commandName}:`, err);
+    const content = "❌ Ocorreu um erro ao executar este comando.";
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply(content).catch(() => {});
+    } else {
+      await interaction.reply({ content, ephemeral: true }).catch(() => {});
+    }
+  }
 });
 
 let readyPromise: Promise<void> | null = null;

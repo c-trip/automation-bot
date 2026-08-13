@@ -34,4 +34,11 @@ export const env = {
   github: {
     webhookSecret: required("GITHUB_WEBHOOK_SECRET"),
   },
+
+  database: {
+    // Opcional de propósito: sem ela, o bot continua funcionando normalmente para as
+    // notificações do GitHub — só /stats, /leaderboard e os lembretes automáticos
+    // ficam desativados (ver src/lib/prisma.ts).
+    url: optional("DATABASE_URL"),
+  },
 } as const;
