@@ -200,6 +200,53 @@ Esperado: o bot responde (após um breve "pensando...") com um embed de estatís
 
 ---
 
+## 8. Testar o Engineering Project Assistant (check-in, lembrete e relatório)
+
+Essas três funcionalidades exigem `DATABASE_URL` configurada — sem ela, os jobs do scheduler nem arrancam (aviso `[scheduler] DATABASE_URL não configurada...` no log).
+
+### 8.1. Preparar o `.env`
+
+```env
+DISCORD_CHECKIN_CHANNEL_ID=<id do canal #atualizacoes-diarias>
+DISCORD_TEAM_ROLE_ID=<id do cargo da equipa>
+DISCORD_CEO_USER_ID=<id do utilizador que recebe o relatório>
+```
+
+Pra testar rápido sem esperar 48h/24h/7 dias, ajuste também (opcional):
+
+```env
+CHECKIN_INTERVAL_HOURS=0.1
+CHECKIN_REMINDER_AFTER_HOURS=0.05
+WEEKLY_REPORT_INTERVAL_DAYS=0.05
+SCHEDULER_POLL_MINUTES=1
+```
+
+Rode `pnpm commands:register` de novo depois de adicionar `/checkin` e `/relatorio` pela primeira vez.
+
+### 8.2. Testar o check-in manualmente
+
+Com `pnpm dev` rodando, no Discord:
+
+```
+/checkin
+```
+
+Esperado: o bot posta o embed "📋 Check-in de Desenvolvimento" no canal configurado e abre uma thread. Responda na thread — a mensagem deve ser gravada (confira no Prisma Studio, `pnpm db:studio`, na tabela `TeamUpdate`).
+
+### 8.3. Testar o lembrete de 24h
+
+Com `CHECKIN_REMINDER_AFTER_HOURS` baixo (ex.: `0.05` = 3min) e `SCHEDULER_POLL_MINUTES=1`, espere o scheduler rodar depois de criar um check-in sem responder. Esperado: aparece `🔔 @<utilizador>` na thread, só para membros do cargo `DISCORD_TEAM_ROLE_ID` que ainda não responderam.
+
+### 8.4. Testar o relatório semanal manualmente
+
+```
+/relatorio
+```
+
+Esperado: o bot envia um DM pra `DISCORD_CEO_USER_ID` com o resumo narrativo da semana (PRs, issues, builds, participação nos check-ins e falas da equipa). Se o utilizador tiver DMs fechadas para o servidor, o Discord recusa e o log mostra o erro — sem derrubar o bot.
+
+---
+
 ## Problemas comuns
 
 | Sintoma | Causa provável | O que fazer |
@@ -212,3 +259,6 @@ Esperado: o bot responde (após um breve "pensando...") com um embed de estatís
 | GitHub mostra erro na entrega (não 200) | URL do ngrok mudou, ou servidor local caiu | Confirme que `pnpm dev` está rodando e a URL do ngrok bate com a do webhook |
 | `/stats` ou `/leaderboard` não aparecem ao digitar no Discord | Comandos ainda não foram registados, ou registo global ainda propagando | Rode `pnpm commands:register`; se não usar `DISCORD_GUILD_ID`, espere até 1h |
 | `/stats`/`/leaderboard` sempre avisam que o banco não está configurado | `DATABASE_URL` ausente ou inválida no `.env` | Configure um Postgres válido em `DATABASE_URL` e rode `pnpm db:deploy` |
+| Check-in automático nunca é postado | `DISCORD_CHECKIN_CHANNEL_ID` ausente, ou `DATABASE_URL` não configurada (scheduler nem arranca) | Confira o log ao subir o servidor: deve aparecer `[scheduler] Jobs ligados...` |
+| Lembrete de 24h nunca chega | `DISCORD_TEAM_ROLE_ID` ou `DISCORD_GUILD_ID` ausentes, ou nenhum membro do servidor tem o cargo configurado | Confirme os IDs e que algum membro real tem o cargo |
+| `/relatorio` responde mas o CEO não recebe DM | `DISCORD_CEO_USER_ID` errado, ou a pessoa tem DMs fechadas para membros do servidor | Confira o ID e as configurações de privacidade do Discord da pessoa |

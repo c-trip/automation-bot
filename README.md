@@ -32,6 +32,13 @@ pnpm dev
 | `DISCORD_CHANNEL_DEPLOYS` | não | Canal para eventos de deploy (`#deploys`) |
 | `GITHUB_WEBHOOK_SECRET` | sim | Secret usado para validar a assinatura do webhook do GitHub |
 | `DATABASE_URL` | não | Connection string do Postgres — sem ela o bot funciona normalmente, mas `/stats`, `/leaderboard` e os lembretes automáticos ficam desativados |
+| `DISCORD_CHECKIN_CHANNEL_ID` | não | Canal onde o check-in automático é postado (ex.: `#atualizacoes-diarias`) — exige `DATABASE_URL` |
+| `DISCORD_TEAM_ROLE_ID` | não | Cargo do Discord que define "quem é equipa", usado pros lembretes de 24h e pelo relatório semanal |
+| `DISCORD_CEO_USER_ID` | não | Quem recebe o relatório semanal por DM |
+| `CHECKIN_INTERVAL_HOURS` | não (padrão 48) | De quanto em quanto tempo um novo check-in é postado |
+| `CHECKIN_REMINDER_AFTER_HOURS` | não (padrão 24) | Depois de quanto tempo sem resposta o lembrete é enviado |
+| `WEEKLY_REPORT_INTERVAL_DAYS` | não (padrão 7) | De quanto em quanto tempo o relatório semanal é enviado |
+| `SCHEDULER_POLL_MINUTES` | não (padrão 15) | De quanto em quanto tempo o scheduler verifica se algum job está pendente |
 
 Para pegar o ID de um canal do Discord: ative o **Modo Desenvolvedor** (Configurações → Avançado) e clique com o botão direito no canal → **Copiar ID**.
 
@@ -52,7 +59,7 @@ pnpm build              # compila para dist/
 pnpm start              # roda a versão compilada
 pnpm typecheck          # checagem de tipos sem gerar build
 pnpm test:webhook       # envia um payload de exemplo assinado para /webhooks/github
-pnpm commands:register  # registra /stats e /leaderboard na API do Discord
+pnpm commands:register  # registra os slash commands na API do Discord
 pnpm db:migrate         # cria/aplica uma migration do Prisma (dev)
 pnpm db:deploy          # aplica migrations pendentes (produção)
 pnpm db:studio          # abre o Prisma Studio para inspecionar o banco
@@ -66,27 +73,34 @@ Veja o passo a passo completo em [`COMO-TESTAR.md`](./COMO-TESTAR.md).
 
 ```txt
 src/
-├── server.ts               # bootstrap do Fastify + Discord
+├── server.ts               # bootstrap do Fastify + Discord + scheduler
 ├── bot.ts                  # client do Discord (login) + handler de slash commands
 ├── routes/
 │   └── github.ts            # POST /webhooks/github
+├── listeners/
+│   └── team-updates.listener.ts # grava respostas de check-in enviadas em threads
 ├── commands/
 │   ├── stats.ts              # /stats
 │   ├── leaderboard.ts         # /leaderboard
+│   ├── checkin.ts             # /checkin (dispara o check-in manualmente)
+│   ├── relatorio.ts           # /relatorio (dispara o relatório semanal manualmente)
 │   └── index.ts               # lista de comandos (registro + handler)
 ├── services/
 │   ├── discord.service.ts   # envio de mensagens/embeds
 │   ├── github.service.ts    # validação de assinatura + montagem de embeds
-│   └── stats.service.ts     # persistência do histórico + consultas de /stats e /leaderboard
+│   ├── stats.service.ts     # persistência do histórico + consultas de /stats e /leaderboard
+│   ├── checkin.service.ts   # check-in automático + lembretes de 24h (Fases 1 e 2)
+│   └── report.service.ts    # relatório semanal narrativo (Fase 3)
 ├── lib/
-│   └── prisma.ts             # client do Prisma (Postgres), opcional
+│   ├── prisma.ts             # client do Prisma (Postgres), opcional
+│   └── scheduler.ts          # agenda os jobs de check-in/lembrete/relatório
 ├── config/
 │   └── env.ts                # leitura/validação de variáveis de ambiente
 └── types/
     └── github.ts             # tipos dos payloads de webhook usados
 
 prisma/
-├── schema.prisma            # modelos PullRequest, Issue, BuildRun
+├── schema.prisma            # modelos PullRequest, Issue, BuildRun, CheckIn, TeamUpdate, CheckInReminder, WeeklyReportLog
 └── migrations/               # histórico de migrations do banco
 ```
 
@@ -130,6 +144,13 @@ Cada etapa de desenvolvimento é resumida em [`docs/implementacoes/`](./docs/imp
 - [x] Slash commands (`pnpm commands:register`)
 - [x] `/stats` — PRs abertas/mergeadas, issues abertas/fechadas, builds falhados num período
 - [x] `/leaderboard` — ranking de quem mais mergeou PRs num período
+
+**Engineering Project Assistant**
+
+- [x] Fase 1 — Check-in automático a cada `CHECKIN_INTERVAL_HOURS` (padrão 48h) no canal `DISCORD_CHECKIN_CHANNEL_ID`, com thread própria; respostas armazenadas em `TeamUpdate`
+- [x] Fase 2 — Lembrete depois de `CHECKIN_REMINDER_AFTER_HOURS` (padrão 24h) sem resposta, pra cada membro do cargo `DISCORD_TEAM_ROLE_ID`
+- [x] Fase 3 — Relatório semanal narrativo (template em português, sem IA externa) enviado por DM a `DISCORD_CEO_USER_ID`
+- [x] `/checkin` e `/relatorio` — disparo manual das Fases 1 e 3, fora do ciclo automático
 
 **Pendente**
 
