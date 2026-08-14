@@ -41,4 +41,23 @@ export const env = {
     // ficam desativados (ver src/lib/prisma.ts).
     url: optional("DATABASE_URL"),
   },
+
+  // Engineering Project Assistant — check-in automático, follow-up e relatório semanal.
+  // Tudo aqui é opcional: sem DATABASE_URL configurada o scheduler nem arranca (ver
+  // src/lib/scheduler.ts); sem os IDs abaixo, cada job individual fica desativado e
+  // avisa uma vez no log, sem derrubar o resto do bot.
+  teamCheckin: {
+    // Canal onde o check-in é postado (recomendado: #atualizacoes-diarias).
+    channelId: optional("DISCORD_CHECKIN_CHANNEL_ID"),
+    // Cargo do Discord que define quem é "equipa" — usado pros lembretes de 24h e pro
+    // cálculo de taxa de resposta no relatório semanal.
+    teamRoleId: optional("DISCORD_TEAM_ROLE_ID"),
+    // Quem recebe o relatório semanal por DM.
+    ceoUserId: optional("DISCORD_CEO_USER_ID"),
+    intervalHours: Number(process.env.CHECKIN_INTERVAL_HOURS ?? 48),
+    reminderAfterHours: Number(process.env.CHECKIN_REMINDER_AFTER_HOURS ?? 24),
+    weeklyReportIntervalDays: Number(process.env.WEEKLY_REPORT_INTERVAL_DAYS ?? 7),
+    // De quanto em quanto tempo o scheduler verifica se é hora de rodar cada job.
+    pollIntervalMinutes: Number(process.env.SCHEDULER_POLL_MINUTES ?? 15),
+  },
 } as const;

@@ -83,3 +83,59 @@ model BuildRun {
   @@unique([repo, workflowName, runNumber])
   @@index([repo, workflowName, finishedAt])
 }
+
+/// Uma rodada de check-in de equipa (Engineering Project Assistant — Fase 1).
+/// Criada quando o bot posta a mensagem de check-in e abre a thread onde a equipa
+/// responde. `threadId` é o que liga as respostas (TeamUpdate) e os lembretes
+/// (CheckInReminder) a esta rodada.
+model CheckIn {
+  id        Int      @id @default(autoincrement())
+  channelId String
+  threadId  String   @unique
+  createdAt DateTime @default(now())
+
+  updates   TeamUpdate[]
+  reminders CheckInReminder[]
+
+  @@index([createdAt])
+}
+
+/// Resposta de um membro da equipa a um check-in — armazenada como veio (texto livre),
+/// pra alimentar tanto consultas simples quanto o Relatório Semanal (Fase 3).
+model TeamUpdate {
+  id      Int     @id @default(autoincrement())
+  checkIn CheckIn @relation(fields: [checkInId], references: [id])
+  checkInId Int
+
+  discordUserId   String
+  discordUsername String
+  content         String
+
+  createdAt DateTime @default(now())
+
+  @@index([checkInId])
+  @@index([discordUserId])
+}
+
+/// Marca que já foi enviado o lembrete de "sem resposta há 24h" pra um membro numa
+/// rodada de check-in específica — evita repetir o lembrete a cada varredura do
+/// scheduler (ver src/lib/scheduler.ts).
+model CheckInReminder {
+  id      Int     @id @default(autoincrement())
+  checkIn CheckIn @relation(fields: [checkInId], references: [id])
+  checkInId Int
+
+  discordUserId String
+  sentAt        DateTime @default(now())
+
+  @@unique([checkInId, discordUserId])
+}
+
+/// Registo de cada envio do Relatório Semanal (Fase 3) — usado só pra saber quando foi
+/// o último envio e decidir se já é hora do próximo.
+model WeeklyReportLog {
+  id          Int      @id @default(autoincrement())
+  periodStart DateTime
+  periodEnd   DateTime
+  sentAt      DateTime @default(now())
+}
